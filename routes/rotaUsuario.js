@@ -23,12 +23,33 @@ db.run(`CREATE TABLE IF NOT EXISTS
 router.get("/", (req, res, next) => {
     db.all('SELECT * FROM usuario', (error, rows) => {
         if (error) {
+            return res.status(500).send(
+                {
+
+                error: error.message
+
+            }
+            
+            );
+        }
+        res.status(200).send({
+            mensagem: "Aqui está a lista de todos os usuários",
+            usuarios: rows
+        });
+    });
+    
+});
+router.get("/login", (req, res, next) => {
+    const {email,senha} = req.body;
+    db.get('SELECT * FROM usuario where email=? and senha=?',[email,senha], (error, rows) => {
+        if (error) {
             return res.status(500).send({
                 error: error.message
             });
         }
+
         res.status(200).send({
-            mensagem: "Aqui está a lista de todos os usuários",
+            mensagem: "usuário logado com sucesso!",
             usuarios: rows
         });
     });
@@ -79,7 +100,7 @@ router.post("/",(req,res,next)=>{
         });
         
         res.status(200).send
-        ({ mensagem: "usuario salvo com sucesso" });
+        ({ mensagem: "usuário salvo com sucesso!" });
         
     });
 
@@ -89,9 +110,55 @@ router.post("/",(req,res,next)=>{
 // aqui podemos alterar dados do usuário
 router.put("/",(req,res,next)=>{
 
+const {id,nome,email,senha} = req.body;
+
+        db.run(`UPDATE usuario SET
+
+        nome=?,
+        email=?,
+        senha=?
+
+ where id=?`,[nome,email,senha,id], (error, rows) => {
+
+    if (error) {
+        return res.status(500).send({
+           error: error.message
+        });
+    }
+
+
+    res.status(200).send(
+        { mensagem: `usuário de id: ${id} dados alterados com sucesso!`
+    });
+
+
+});
+
+
+
 });
  // Aqui podemos deletar o cadastro de um usuário por meio do id
 router.delete("/:id",(req,res,next)=>{
+    
+    const {id} = req.params
+    db.run('DELETE FROM usuario where id=?',[id], (error, rows) => {
+        if (error) {
+            return res.status(500).send({
+               error: error.message
+            });
+        }
+
+
+        res.status(200).send(
+            { mensagem: `usuário de id: ${id} deletado com sucesso!`
+        });
+
+
+    });
+
+   
+
 
 });
+
 module.exports = router
