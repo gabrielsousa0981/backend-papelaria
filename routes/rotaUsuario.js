@@ -4,7 +4,7 @@ const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("database.db");
 
 db.run(`CREATE TABLE IF NOT EXISTS
- usuario (
+    usuario (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT,
     email TEXT,
@@ -12,8 +12,8 @@ db.run(`CREATE TABLE IF NOT EXISTS
     `, (createTableError) => {
 
     if (createTableError) {
-         return res.status(500).send({
-                error: createTableError.message
+        return res.status(500).send({
+            error: createTableError.message
         });
     }
 
@@ -39,19 +39,37 @@ router.get("/", (req, res, next) => {
     });
     
 });
-router.get("/login", (req, res, next) => {
+router.post("/login", (req, res, next) => {
     const {email,senha} = req.body;
-    db.get('SELECT * FROM usuario where email=? and senha=?',[email,senha], (error, rows) => {
+
+
+
+    db.get(`SELECT * FROM usuario
+     where email=? and senha=?`,
+    [email,senha], (error, rows) => {
         if (error) {
-            return res.status(500).send({
+
+            return res.status(500).send(
+            {
                 error: error.message
-            });
+            }
+            );
+        }
+      const usuario = {
+
+        id:rows.id,
+        nome:rows.nome,
+        email:rows.email
+
+      }
+
+        res.status(200).send(
+            {
+            mensagem: "usuário logado com sucesso!",
+            usuarios: usuario
         }
 
-        res.status(200).send({
-            mensagem: "usuário logado com sucesso!",
-            usuarios: rows
-        });
+        );
     });
     
 });
