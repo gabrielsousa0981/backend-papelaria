@@ -2,13 +2,13 @@ const express = require("express");
 const router = express.Router();
 const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("database.db");
-
 db.run(`CREATE TABLE IF NOT EXISTS 
          estoque (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
             id_produto int, 
-            quantidade REAL, 
-            valor_unitario REAL
+            quantidade Real, 
+            valor_unitario Real,
+            total Real
             )
             `, (createTableError) => {
     if (createTableError) {
@@ -18,9 +18,10 @@ db.run(`CREATE TABLE IF NOT EXISTS
     }
 });
 
-// Consultar todos os dados
-router.get("/", (req, res, next) => {
-    db.all('SELECT * FROM estoque', (error, rows) => {
+
+//consultar todos os dados
+router.get("/",(req,res,next)=>{
+db.all('SELECT * FROM estoque', (error, rows) => {
         if (error) {
             return res.status(500).send({
                 error: error.message
@@ -28,16 +29,16 @@ router.get("/", (req, res, next) => {
         }
 
         res.status(200).send({
-            mensagem: "Aqui está a lista de todo o Estoque",
+            mensagem: "Aqui está a lista de todo Estoque",
             produtos: rows
         });
     });
-});
+})
 
-// Consultar apenas uma entrada pelo id
-router.get("/:id", (req, res, next) => {
-    const { id } = req.params;
-    db.get('SELECT * FROM estoque WHERE id = ?', [id], (error, row) => {
+//consultar apenas uma entrada pelo id
+router.get("/:id",(req,res,next)=>{
+    const {id} = req.params;
+    db.get('SELECT * FROM estoque where id=?',[id], (error, rows) => {
         if (error) {
             return res.status(500).send({
                 error: error.message
@@ -45,62 +46,67 @@ router.get("/:id", (req, res, next) => {
         }
 
         res.status(200).send({
-            mensagem: "Aqui está o cadastro do Estoque",
-            produto: row
+            mensagem: "Aqui está o cadastro da estoque",
+            produto: rows
         });
     });
-});
+})
 
-// Salvar dados da entrada
-router.post("/", (req, res, next) => {
-    const { id_produto, quantidade, valor_unitario } = req.body;
-    db.serialize(() => {
+// aqui salvamos dados da entrada
+router.post("/",(req,res,next)=>{
+    const { id_produto, quantidade, valor_unitario, data_saida }
+     = req.body;
+   db.serialize(() => {
         const insertEstoque = db.prepare(`
-        INSERT INTO estoque(id_produto, quantidade, valor_unitario) 
-        VALUES(?, ?, ?)`);
-        insertEstoque.run(id_produto, quantidade, valor_unitario, (err) => {
-            if (err) {
-                return res.status(500).send({
-                    error: err.message
-                });
-            }
-
-            res.status(200).send({ mensagem: "Estoque salvo com sucesso!" });
-        });
+        INSERT INTO saida(id_produto, quantidade, valor_unitario) 
+        VALUES(?,?,?)`);
+        insertEstoque.run(id_produto, quantidade, valor_unitario);
         insertEstoque.finalize();
     });
+    process.on("SIGINT", () => {
+        db.close((err) => {
+            if (err) {
+                return res.status(304).send(err.message);
+            }
+        });
+    });
+
+    res.status(200)
+    .send({ mensagem: "Estoque salvo com sucesso!" });
 });
 
-// Alterar dados da entrada
-router.put("/", (req, res, next) => {
-    const { id, id_produto, quantidade, valor_unitario } = req.body;
-    db.run(`UPDATE estoque SET 
-                id_produto = ?, 
-                quantidade = ?, 
-                valor_unitario = ? 
-            WHERE id = ?`, [id_produto, quantidade, valor_unitario, id], (error) => {
+// aqui podemos alterar dados da entrada
+router.put("/",(req,res,next)=>{
+    const {id,id_produto, quantidade, valor_unitario} = req.body;
+                db.run(`UPDATE estoque SET 
+                            id_produto=?,
+                            quantidade=?,
+                            valor_unitario=? 
+            where id=?`,[id_produto,quantidade,valor_unitario,id], (error, rows) => {
         if (error) {
             return res.status(500).send({
                 error: error.message
             });
         }
-
-        res.status(200).send({ mensagem: "Dados do Estoque salvos com sucesso!" });
+        res.status(200).send(
+            { mensagem: "Dados do Estoque salvos com sucesso!" 
+            });
     });
 });
-
-// Deletar cadastro por id
-router.delete("/:id", (req, res, next) => {
-    const { id } = req.params;
-    db.run('DELETE FROM estoque WHERE id = ?', [id], (error) => {
+ // Aqui podemos deletar o cadastro de um usuário por meio do id
+router.delete("/:id",(req,res,next)=>{
+    const {id} = req.params
+    db.run('DELETE FROM estoque where id=?',[id], (error, rows) => {
         if (error) {
             return res.status(500).send({
                 error: error.message
             });
         }
-
-        res.status(200).send({ mensagem: "Entrada deletada com sucesso!" });
+        res.status(200).send(
+            { mensagem: "Estoque deletado com sucesso!" 
+            });
     });
-});
 
+
+});
 module.exports = router;
